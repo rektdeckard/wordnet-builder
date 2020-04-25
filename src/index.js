@@ -1,22 +1,31 @@
-import fs, { access } from "fs";
+import fs from "fs";
 import util from "util";
 import EnglishDictionary from "en-dictionary";
 import GetOpt from "node-getopt";
 
 const Dictionary = EnglishDictionary.default;
+const help = `\
+Usage:
+  node wordnet-builder [OPTION]... [WORD]...
+
+Options:
+[[OPTIONS]]\
+`;
+
 const opt = GetOpt.create([
   ["f", "file=FILE", "loads words from a supplied file"],
   ["o", "output=FILE", "outputs to file instead of stdout"],
   ["u", "human", "outputs contents as human-readable JSON"],
+  ["c", "color", "colored ouput (incompatible with redirection)"],
   ["r", "raw", "output raw wordnet query to stdout"],
   ["v", "verbose", "echo output stream to stdout (default if no output file)"],
   ["h", "help", "displays this help message"],
 ])
-  .bindHelp()
+  .bindHelp(help)
   .parseSystem();
 
 const { argv, options } = opt;
-console.log(argv, options);
+options.verbose && console.log(argv, options);
 
 if (options.file) handleInputFile(options.file);
 else if (argv.length) {
