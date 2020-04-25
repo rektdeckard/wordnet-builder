@@ -30,7 +30,7 @@ options.verbose && console.log(argv, options);
 if (options.file) handleInputFile(options.file);
 else if (argv.length) {
   search(argv)
-    .then(buildNetwork)
+    .then(parse)
     .catch((error) => {
       console.error(error);
       process.exitCode = 1;
@@ -42,7 +42,7 @@ async function handleInputFile(path) {
     try {
       const words = fs.readFileSync(path).toString().split("\n");
       search(words)
-        .then(buildNetwork)
+        .then(parse)
         .catch((error) => {
           console.error(error);
           process.exitCode = 1;
@@ -58,17 +58,18 @@ async function handleInputFile(path) {
 }
 
 async function search(words) {
+  // TODO: figure out what's wrong with en-wordnet path
   const dictionary = new Dictionary(
     "C:\\Users\\Tobias Fried\\Dropbox\\Personal\\code\\Nodejs\\wordnet-builder\\node_modules\\en-wordnet\\database\\3.1"
   );
   await dictionary.init();
-
   const result = dictionary.searchFor(words);
-  options.raw && log(result);
-  return result;
+
+  if (options.raw) console.info(util.inspect(result, { depth: null, colors: true }));
+  else return result;
 }
 
-function buildNetwork(entryMap) {
+function parse(entryMap) {
   let entryObject = {};
   for (let [key, value] of entryMap) {
     entryObject[key] = value;
@@ -88,38 +89,31 @@ function buildNetwork(entryMap) {
     }, {});
     output(readable);
   } else {
+    const tokenSeparators = /[ ,()]/;
     const network = Object.keys(entryObject).reduce(
       (acc, word) => {
-        const { pos, offsetData = [] } = entryObject[word];
+        const { offsetData = [] } = entryObject[word];
+        const isValidToken = (token) =>
+          token.length && !token.match(/\d/) && token !== word;
 
-        offsetData.forEach((sense) => {
+        for (let sense of offsetData) {
           const definition = sense.glossary[0];
           acc.responses.push({ source: word, value: definition });
           acc.nodes.push(
             ...[
               ...new Set(
-                definition
-                  .split(/[ ,()]/)
-                  .filter(
-                    (value) =>
-                      value.length && !value.match(/\d/) && value !== word
-                  )
+                definition.split(tokenSeparators).filter(isValidToken)
               ),
             ].map((value) => ({ value }))
           );
           acc.edges.push(
             ...[
               ...new Set(
-                definition
-                  .split(/[ ,()]/)
-                  .filter(
-                    (target) =>
-                      target.length && !target.match(/\d/) && target !== word
-                  )
+                definition.split(tokenSeparators).filter(isValidToken)
               ),
             ].map((target) => ({ source: word, target }))
           );
-        });
+        }
         return acc;
       },
       { responses: [], nodes: [], edges: [] }
@@ -143,5 +137,9 @@ function output(network) {
 }
 
 function log(contents) {
-  console.info(util.inspect(contents, false, null, true));
+  if (options.color) {
+    console.info(util.inspect(contents, { depth: null, colors: true }));
+  } else {
+    console.log(JSON.stringify(contents, null, 2));
+  }
 }
