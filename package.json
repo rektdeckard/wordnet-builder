@@ -1,0 +1,17 @@
+{
+  "name": "wordnet-builder",
+  "version": "0.0.1",
+  "description": "Create and upload standard iWordNet graphs using Princeton Wordnet",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tobias Fried <friedtm@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "en-dictionary": "^1.2.4",
+    "en-wordnet": "^2.0.6",
+    "node-getopt": "^0.3.2"
+  }
+}
